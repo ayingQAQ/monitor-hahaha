@@ -63,4 +63,14 @@ https://github.com/ayingQAQ/monitor-hahaha
 
 ## 许可证
 
-主题使用 [MIT 许可证](LICENSE)。字体、国旗及其他依赖的来源和许可见 [第三方说明](THIRD_PARTY.md) 与 [完整许可文本](THIRD_PARTY_NOTICES.txt)。
+主题代码使用 [MIT 许可证](LICENSE)，保留原作者及本项目的版权声明。
+
+| 内容 | 许可证 |
+| --- | --- |
+| 主题代码 | [MIT](LICENSE) |
+| 中文字体 Long Cang | [SIL Open Font License 1.1](public/fonts/LongCang-OFL.txt) |
+| 英文字体 Patrick Hand | [SIL Open Font License 1.1](public/fonts/PatrickHand-OFL.txt) |
+| 国旗基础图案 country-flag-icons | [MIT](public/flags/LICENSE.txt) |
+| 其他第三方组件 | 依各自许可证，见 [完整许可文本](THIRD_PARTY_NOTICES.txt) |
+
+第三方素材的许可独立适用，来源见 [第三方说明](THIRD_PARTY.md)。

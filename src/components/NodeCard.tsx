@@ -3,7 +3,7 @@ import { bytes, rate, money, cycle, uptime } from "../domain/format";
 import { stateOf, usage } from "../domain/model";
 import { Paper, Icon, Flag, Meter, Scribble, Stroke } from "./Sketch";
 const stateLabels = {
-  online: "在线，挺好的",
+  online: "在线",
   offline: "暂时离线",
   waiting: "等第一次上报",
   invalid: "这次读数异常",

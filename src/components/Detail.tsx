@@ -6,6 +6,7 @@ import { bytes, withGaps } from "../domain/format";
 import { Paper, Icon, Flag, Button, Scribble } from "./Sketch";
 import { Status } from "./NodeCard";
 import { Chart, type Series } from "./Chart";
+const readView = (): "metrics" | "ping" => new URLSearchParams(location.search).get("view") === "ping" ? "ping" : "metrics";
 const palette = ["var(--blue)", "var(--green)", "var(--ochre)", "var(--red)"];
 export function Detail({
   node,
@@ -17,7 +18,7 @@ export function Detail({
   onBack: () => void;
 }) {
   const [hours, setHours] = useState(1),
-    [kind, setKind] = useState<"metrics" | "ping">("metrics"),
+    [kind, setKind] = useState<"metrics" | "ping">(readView),
     [history, setHistory] = useState<History | null>(null),
     [error, setError] = useState(""),
     [revision, setRevision] = useState(0);
@@ -39,6 +40,19 @@ export function Detail({
       active = false;
     };
   }, [node.id, hours, kind, revision]);
+  useEffect(() => {
+    const sync = () => setKind(readView());
+    addEventListener("popstate", sync);
+    return () => removeEventListener("popstate", sync);
+  }, []);
+  const selectView = (next: "metrics" | "ping") => {
+    if (next === kind) return;
+    const url = new URL(location.href);
+    if (next === "ping") url.searchParams.set("view", "ping");
+    else url.searchParams.delete("view");
+    window.history.pushState({}, "", url.pathname + url.search);
+    setKind(next);
+  };
   const metricPoints = (key: string, scale = 1): ChartPoint[] =>
     withGaps(history?.metrics || [], history?.step).map((row) => {
       const value = (row as Record<string, number | null>)[key];
@@ -60,11 +74,18 @@ export function Detail({
   }));
   return (
     <>
-      <div className="detail-back">
+      <div className="detail-navigation">
         <Button onClick={onBack}>
           <Icon name="back" />
           返回记录簿
         </Button>
+        <nav className="detail-tabs" aria-label="节点页面">
+          {(["metrics", "ping"] as const).map((k) => (
+            <Button key={k} pressed={kind === k} onClick={() => selectView(k)}>
+              {k === "metrics" ? "资源手记" : "延迟探测"}
+            </Button>
+          ))}
+        </nav>
       </div>
       <Paper className="detail-intro" color="yellow" seed={node.id} tape>
         <div>
@@ -85,17 +106,7 @@ export function Detail({
         </div>
       </Paper>
       <div className="detail-controls">
-        <Button label="刷新历史记录" onClick={() => setRevision((r) => r + 1)}>
-          <Icon name="pen" size={19} /> 再记一页
-        </Button>
-        <div>
-          {(["metrics", "ping"] as const).map((k) => (
-            <Button key={k} pressed={kind === k} onClick={() => setKind(k)}>
-              {k === "metrics" ? "资源手记" : "延迟探测"}
-            </Button>
-          ))}
-        </div>
-        <div>
+        <div role="group" aria-label="历史时间范围">
           {historyWindows(days).map((h) => (
             <Button key={h} pressed={hours === h} onClick={() => setHours(h)}>
               {h < 24 ? `${h} 小时` : `${h / 24} 天`}

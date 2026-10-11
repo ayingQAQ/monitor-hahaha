@@ -12,6 +12,7 @@ import {
   Stroke,
 } from "./components/Sketch";
 import { NodeCard } from "./components/NodeCard";
+import { Globe } from "./components/Globe";
 import { Detail } from "./components/Detail";
 import "./styles/app.css";
 type Me = {
@@ -130,7 +131,7 @@ export default function App() {
             </span>
           </a>
           <nav>
-            <span className="margin-note">今天也在好好运行 ↙</span>
+            {id === null ? <div className="search-note"><Icon name="search" /><Search value={query} onChange={setQuery} /></div> : <span className="margin-note">今天也在好好运行 ↙</span>}
             <Button label="外观设置" onClick={() => setSettings(true)}>
               <Icon name="settings" />
             </Button>
@@ -187,32 +188,7 @@ export default function App() {
         ) : (
           <>
             <section className="opening">
-              <div className="opening-title">
-                <span className="chapter">FIELD NOTES / 运行观察簿</span>
-                <h1>
-                  服务器的
-                  <br />
-                  <em>小小日常。</em>
-                </h1>
-                <Scribble />
-                <p>
-                  把每一次心跳，随手记下来。
-                  <br />
-                  连接、负载和流量，都在这几张纸上。
-                </p>
-                <svg
-                  className="opening-arrow"
-                  viewBox="0 0 120 75"
-                  aria-hidden="true"
-                >
-                  <Stroke
-                    d="M3 8 Q106 -8 94 59 M76 45 L94 59 L112 40"
-                    color="var(--red)"
-                    weight={1.5}
-                    roughness={2}
-                  />
-                </svg>
-              </div>
+              <Globe nodes={visible} onOpen={go} />
               <div className="loose-notes">
                 <Paper color="yellow" className="now-note" tape seed={3}>
                   <span className="note-label">此刻，在线的朋友</span>
@@ -250,23 +226,7 @@ export default function App() {
                 </div>
               </div>
             </section>
-            <section className="node-section">
-              <div className="section-heading">
-                <div>
-                  <span className="chapter">CHAPTER 01</span>
-                  <h2>
-                    一台一页，慢慢翻。
-                    <span className="node-count">
-                      {nodes ? visible.length : "…"}
-                    </span>
-                  </h2>
-                  <Scribble color="var(--ochre)" />
-                </div>
-                <div className="search-note">
-                  <Icon name="search" />
-                  <Search value={query} onChange={setQuery} />
-                </div>
-              </div>
+            <section className="node-section" aria-label="节点列表">
               {groups.length > 0 && (
                 <div className="group-tabs">
                   <Button

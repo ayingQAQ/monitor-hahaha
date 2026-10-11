@@ -5,3 +5,4 @@ dist/
 .env*
 theme.tar.gz
 theme.sha256
+*.test.ts

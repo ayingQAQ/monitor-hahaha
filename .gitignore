@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.cache/
+*.log
+.env*
+theme.tar.gz
+theme.sha256

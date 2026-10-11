@@ -2,9 +2,8 @@
 
 [Monitor](https://github.com/monitor-probe/monitor) 的手绘风公开状态页主题。用纸张卡片、手写文字和铅笔线条展示服务器的运行状态。
 
-![主题预览](preview.png)
+![主题预览](preview-readme.png)
 
-> 预览图来自真实站点 [Wenying](https://tz.or2.si/)，尺寸为 1600 × 1000（16:10）。节点状态与指标以实时页面为准。
 
 ## 功能
 

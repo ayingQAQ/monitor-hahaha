@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { api, groupsOf, useNodes } from "./data/api";
 import { loadConfig } from "./data/config";
 import { bytes, rate } from "./domain/format";
@@ -26,13 +26,6 @@ const readRoute = () => {
   const m = location.pathname.match(/^\/node\/(\d+)\/?$/);
   return m ? Number(m[1]) : null;
 };
-function preference() {
-  try {
-    return localStorage.getItem("sketch.ink") || "";
-  } catch {
-    return "";
-  }
-}
 export default function App() {
   const { nodes, error, closed, reconnect } = useNodes();
   const [me, setMe] = useState<Me | null>(null);
@@ -42,9 +35,6 @@ export default function App() {
   const [globeCountry, setGlobeCountry] = useState("");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<string | null>(null);
-  const [ink, setInk] = useState(preference);
-  const [settings, setSettings] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
   const loadMe = () =>
     api<Me>("/me")
       .then((d) => {
@@ -68,10 +58,6 @@ export default function App() {
       if (!me.public_page && !me.authed) location.href = "/admin/";
     }
   }, [me]);
-  useEffect(() => {
-    if (settings) dialog.current?.showModal();
-    else dialog.current?.close();
-  }, [settings]);
   const go = (next: number | null) => {
     history.pushState({}, "", next == null ? "/" : `/node/${next}`);
     setId(next);
@@ -95,9 +81,7 @@ export default function App() {
     tx = valid.reduce((sum, n) => sum + (n.metrics?.net_tx || 0), 0);
   const traffic = visible.reduce((sum, n) => sum + usage(n), 0);
   const selected = nodes?.find((n) => n.id === id);
-  const actualInk = ["blue", "green", "orange"].includes(ink)
-    ? ink
-    : String(config.accent || "blue");
+  const actualInk = String(config.accent || "blue");
   return (
     <div className="desk" data-ink={actualInk}>
       <main className="workbook">
@@ -133,9 +117,6 @@ export default function App() {
           </a>
           <nav>
             {id === null ? <div className="search-note"><Icon name="search" /><Search value={query} onChange={setQuery} /></div> : <span className="margin-note">今天也在好好运行 ↙</span>}
-            <Button label="外观设置" onClick={() => setSettings(true)}>
-              <Icon name="settings" />
-            </Button>
             <Button
               label="管理入口"
               className="admin-button"
@@ -295,46 +276,7 @@ export default function App() {
           <span>写下数字，也留下温度。</span>
         </footer>
       </main>
-      <dialog
-        ref={dialog}
-        className="ink-dialog"
-        onCancel={() => setSettings(false)}
-        onClose={() => setSettings(false)}
-      >
-        <Paper className="settings-sheet" tape seed={49}>
-          <div className="dialog-heading">
-            <h2>今天用哪支笔？</h2>
-            <Button label="关闭设置" onClick={() => setSettings(false)}>
-              <Icon name="close" />
-            </Button>
-          </div>
-          <p>只改变你自己的这本手册。</p>
-          <div className="ink-options">
-            {[
-              ["blue", "蓝色墨水"],
-              ["green", "绿色墨水"],
-              ["orange", "橙色墨水"],
-              ["", "跟随站点"],
-            ].map(([v, label]) => (
-              <Button
-                key={v}
-                pressed={ink === v}
-                onClick={() => {
-                  setInk(v);
-                  try {
-                    if (v) localStorage.setItem("sketch.ink", v);
-                    else localStorage.removeItem("sketch.ink");
-                  } catch {
-                    /* storage disabled */
-                  }
-                }}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-        </Paper>
-      </dialog>
+
     </div>
   );
 }

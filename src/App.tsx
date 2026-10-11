@@ -33,6 +33,7 @@ export default function App() {
   const [config, setConfig] = useState<Record<string, unknown>>({});
   const [meError, setMeError] = useState("");
   const [id, setId] = useState(readRoute);
+  const [locateTarget, setLocateTarget] = useState<number | null>(null);
   const [countryFilter, setCountryFilter] = useState("");
   const [globeCountry, setGlobeCountry] = useState("");
   const [query, setQuery] = useState("");
@@ -78,6 +79,22 @@ export default function App() {
         .includes(query.toLowerCase()),
   );
   const visible = candidates.filter(n => !countryFilter || countryCode(n.country) === countryFilter);
+  const locateNode = (nodeId: number) => {
+    const node = candidates.find(n => n.id === nodeId);
+    if (!node) return;
+    if (countryFilter && countryCode(node.country) !== countryFilter) setCountryFilter("");
+    setLocateTarget(nodeId);
+  };
+  useEffect(() => {
+    if (locateTarget === null) return;
+    const frame = requestAnimationFrame(() => {
+      const title = document.getElementById(`node-card-${locateTarget}`);
+      title?.closest(".node-card")?.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"center"});
+      title?.focus({preventScroll:true});
+      setLocateTarget(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [locateTarget, countryFilter]);
   const online = visible.filter((n) => n.online);
   const valid = visible.filter((n) => stateOf(n) === "online");
   const rx = valid.reduce((sum, n) => sum + (n.metrics?.net_rx || 0), 0),
@@ -173,7 +190,7 @@ export default function App() {
         ) : (
           <>
             <section className="opening">
-              <Globe nodes={candidates} onOpen={go} focus={globeCountry} onFocus={setGlobeCountry} />
+              <Globe nodes={candidates} onOpen={locateNode} focus={globeCountry} onFocus={setGlobeCountry} />
               <div className="loose-notes">
                 <Paper color="yellow" className="now-note" tape seed={3}>
                   <span className="note-label">此刻，在线的朋友</span>

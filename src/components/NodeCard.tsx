@@ -69,7 +69,7 @@ export function NodeCard({
         <Flag code={node.country} />
         <Status node={node} />
       </div>
-      <button className="node-title" onClick={onOpen}>
+      <button id={`node-card-${node.id}`} className="node-title" onClick={onOpen}>
         {node.name}
         <Icon name="arrow" size={23} />
       </button>

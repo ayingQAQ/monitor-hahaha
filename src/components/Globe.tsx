@@ -1,12 +1,12 @@
-import {useMemo,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import type {Node} from '../data/api';
 import {coastlines,coordinates,countryCode,gridlines,project} from '../domain/globe';
 import {Button,Stroke} from './Sketch';
-export function Globe({nodes,onOpen}:{nodes:Node[];onOpen:(id:number)=>void}){
- const [view,setView]=useState({lon:100,lat:25}),[focus,setFocus]=useState('');
+export function Globe({nodes,onOpen,focus,onFocus}:{nodes:Node[];onOpen:(id:number)=>void;focus:string;onFocus:(code:string)=>void}){
+ const [view,setView]=useState({lon:100,lat:25});
+ useEffect(()=>{const ll=coordinates(focus);if(ll)setView({lon:ll[0],lat:ll[1]});},[focus]);
  const drag=useRef<{x:number;y:number;lon:number;lat:number}|null>(null);
  const land=useMemo(()=>coastlines(view),[view]),grid=useMemo(()=>gridlines(view),[view]);
- const countries=[...new Set(nodes.map(n=>countryCode(n.country)))].filter(c=>coordinates(c));
  const unmapped=nodes.filter(n=>!coordinates(n.country)).length;
  const points=nodes.flatMap(n=>{
   const ll=coordinates(n.country);if(!ll)return [];
@@ -19,7 +19,7 @@ export function Globe({nodes,onOpen}:{nodes:Node[];onOpen:(id:number)=>void}){
   <div className="globe-caption"><span>节点地球</span><small>拖动看看另一侧</small></div>
   <svg className="globe-map" viewBox="0 0 440 270" aria-label="节点地区分布，可拖动地球或点击节点" role="group"
    onPointerDown={e=>{if((e.target as Element).closest('.globe-pin'))return;drag.current={x:e.clientX,y:e.clientY,...view};e.currentTarget.setPointerCapture(e.pointerId);}}
-   onPointerMove={e=>{const d=drag.current;if(!d)return;const scale=440/e.currentTarget.getBoundingClientRect().width;setFocus('');setView({lon:(((d.lon-(e.clientX-d.x)*scale*.48+180)%360+360)%360)-180,lat:Math.max(-65,Math.min(65,d.lat+(e.clientY-d.y)*scale*.36))});}}
+   onPointerMove={e=>{const d=drag.current;if(!d)return;const scale=440/e.currentTarget.getBoundingClientRect().width;onFocus('');setView({lon:(((d.lon-(e.clientX-d.x)*scale*.48+180)%360+360)%360)-180,lat:Math.max(-65,Math.min(65,d.lat+(e.clientY-d.y)*scale*.36))});}}
    onPointerUp={e=>{drag.current=null;if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);}}
    onPointerCancel={()=>{drag.current=null;}}>
    <Stroke d="M220 26 A104 104 0 1 1 220 234 A104 104 0 1 1 220 26" fill="#bed5d222" color="var(--blue)" roughness={.9} weight={1.2}/>
@@ -32,7 +32,11 @@ export function Globe({nodes,onOpen}:{nodes:Node[];onOpen:(id:number)=>void}){
     <Stroke d={`M${x} ${y-4} A4 4 0 1 1 ${x} ${y+4} A4 4 0 1 1 ${x} ${y-4}`} color={node.online?'var(--blue)':'var(--red)'} fill={node.online?'var(--blue)':'var(--red)'} roughness={.7} weight={1}/>
    </g>)}
   </svg>
-  <div className="globe-regions" aria-label="地球地区视角">{countries.map(code=><Button key={code} label={`查看 ${code} 地区`} pressed={focus===code} onClick={()=>{const ll=coordinates(code)!;setFocus(code);setView({lon:ll[0],lat:ll[1]});}}>{code} · {nodes.filter(n=>countryCode(n.country)===code).length}</Button>)}</div>
   <small className="globe-note">按地区示意 · 点节点可翻到详情{unmapped?` · ${unmapped} 台地区未知`:''}</small>
  </div>;
+}
+
+export function GlobeRegions({nodes,focus,onFocus}:{nodes:Node[];focus:string;onFocus:(code:string)=>void}){
+ const countries=[...new Set(nodes.map(n=>countryCode(n.country)))].filter(c=>coordinates(c));
+ return <div className="globe-regions" aria-label="地球地区视角">{countries.map(code=><Button key={code} label={`查看 ${code} 地区`} pressed={focus===code} onClick={()=>onFocus(code)}>{code} · {nodes.filter(n=>countryCode(n.country)===code).length}</Button>)}</div>;
 }

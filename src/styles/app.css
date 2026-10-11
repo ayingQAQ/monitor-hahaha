@@ -1371,3 +1371,5 @@ footer > span:last-child {
 .masthead .search-note{width:250px;min-width:0}
 .masthead .ink-search{width:100%;min-width:0}
 @media(max-width:720px){.masthead{flex-wrap:wrap}.masthead nav{width:100%;flex:1 0 100%}.masthead .search-note{flex:1;width:auto}.masthead .search-note .ink-icon{flex-shrink:0}}
+
+.node-section > .globe-regions{justify-content:flex-start;margin:12px 0 24px;gap:8px 12px}

@@ -12,7 +12,7 @@ import {
   Stroke,
 } from "./components/Sketch";
 import { NodeCard } from "./components/NodeCard";
-import { Globe } from "./components/Globe";
+import { Globe, GlobeRegions } from "./components/Globe";
 import { Detail } from "./components/Detail";
 import "./styles/app.css";
 type Me = {
@@ -39,6 +39,7 @@ export default function App() {
   const [config, setConfig] = useState<Record<string, unknown>>({});
   const [meError, setMeError] = useState("");
   const [id, setId] = useState(readRoute);
+  const [globeCountry, setGlobeCountry] = useState("");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<string | null>(null);
   const [ink, setInk] = useState(preference);
@@ -188,7 +189,7 @@ export default function App() {
         ) : (
           <>
             <section className="opening">
-              <Globe nodes={visible} onOpen={go} />
+              <Globe nodes={visible} onOpen={go} focus={globeCountry} onFocus={setGlobeCountry} />
               <div className="loose-notes">
                 <Paper color="yellow" className="now-note" tape seed={3}>
                   <span className="note-label">此刻，在线的朋友</span>
@@ -227,6 +228,7 @@ export default function App() {
               </div>
             </section>
             <section className="node-section" aria-label="节点列表">
+              <GlobeRegions nodes={visible} focus={globeCountry} onFocus={setGlobeCountry} />
               {groups.length > 0 && (
                 <div className="group-tabs">
                   <Button

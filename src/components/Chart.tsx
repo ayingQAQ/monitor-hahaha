@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Paper, Stroke } from "./Sketch";
 import { recordedAt, segments, type ChartPoint } from "../domain/model";
 export type Series = { name: string; color: string; points: ChartPoint[] };
-export function Chart({
+export const Chart = memo(function Chart({
   title,
   series,
   unit = "%",
@@ -171,4 +171,4 @@ export function Chart({
       )}
     </Paper>
   );
-}
+});

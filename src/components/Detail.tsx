@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, type Node } from "../data/api";
+import { historyCache } from "../data/history-cache";
 import { normalizeHistory, type History } from "../data/history";
 import { historyWindows, type ChartPoint } from "../domain/model";
 import { bytes, withGaps } from "../domain/format";
@@ -18,28 +19,33 @@ export function Detail({
   onBack: () => void;
 }) {
   const [hours, setHours] = useState(1),
-    [kind, setKind] = useState<"metrics" | "ping">(readView),
-    [history, setHistory] = useState<History | null>(null),
+    [kind, setKind] = useState<"metrics" | "ping">(readView);
+  const requestPath = `/nodes/${node.id}/metrics?hours=${hours}&points=${Math.max(60, Math.min(720, Math.round(innerWidth)))}&series=${kind}`;
+  const [loaded, setLoaded] = useState<{key:string;data:History} | null>(() => {const cached=historyCache.get(requestPath);return cached?{key:requestPath,data:cached}:null;}),
     [error, setError] = useState(""),
     [revision, setRevision] = useState(0);
+  const history = loaded?.key === requestPath ? loaded.data : null;
   useEffect(() => {
     let active = true;
-    setHistory(null);
+    const controller = new AbortController();
+    const cached = historyCache.get(requestPath);
+    if (cached) {setLoaded({key:requestPath,data:cached});setError("");return;}
+    setLoaded(null);
     setError("");
     api<unknown>(
-      `/nodes/${node.id}/metrics?hours=${hours}&points=${Math.max(60, Math.min(720, Math.round(innerWidth)))}&series=${kind}`,
+      requestPath, controller.signal,
     )
       .then((d) => {
         const safe = normalizeHistory(d, kind);
-        if (active) setHistory(safe);
+        if (active) {historyCache.set(requestPath,safe);setLoaded({key:requestPath,data:safe});}
       })
       .catch((e: Error) => {
         if (active) setError(e.message);
       });
     return () => {
-      active = false;
+      active = false;controller.abort();
     };
-  }, [node.id, hours, kind, revision]);
+  }, [requestPath, kind, revision]);
   useEffect(() => {
     const sync = () => setKind(readView());
     addEventListener("popstate", sync);
@@ -53,7 +59,8 @@ export function Detail({
     window.history.pushState({}, "", url.pathname + url.search);
     setKind(next);
   };
-  const metricPoints = (key: string, scale = 1): ChartPoint[] =>
+  const resourceSeries = useMemo(() => {
+    const metricPoints = (key: string, scale = 1): ChartPoint[] =>
     withGaps(history?.metrics || [], history?.step).map((row) => {
       const value = (row as Record<string, number | null>)[key];
       return {
@@ -61,8 +68,14 @@ export function Detail({
         value: typeof value === "number" ? value / scale : null,
       };
     });
-  const ids = [...new Set((history?.ping || []).map((p) => p.task_id))];
-  const ping: Series[] = ids.map((id, i) => ({
+    return {
+      cpu: [{name:"CPU",color:palette[0],points:metricPoints("cpu")}],
+      memory: [{name:"内存",color:palette[1],points:metricPoints("mem_used",1024**3)},{name:"磁盘",color:palette[2],points:metricPoints("disk_used",1024**3)}],
+      traffic: [{name:"下载",color:palette[0],points:metricPoints("net_rx",1024**2)},{name:"上传",color:palette[1],points:metricPoints("net_tx",1024**2)}],
+    };
+  }, [history]);
+  const ids = useMemo(() => [...new Set((history?.ping || []).map((p) => p.task_id))], [history]);
+  const ping: Series[] = useMemo(() => ids.map((id, i) => ({
     name: history?.probes[id] || `探测 ${id}`,
     color: palette[i % 4],
     points: withGaps(
@@ -71,7 +84,7 @@ export function Detail({
         .sort((a, b) => a.ts - b.ts),
       history?.step,
     ).map((p) => ({ ts: p.ts, value: "latency" in p ? p.latency : null })),
-  }));
+  })), [history, ids]);
   return (
     <>
       <div className="detail-navigation">
@@ -128,43 +141,19 @@ export function Detail({
         <div className="chart-grid">
           <Chart
             title="CPU 的忙碌程度"
-            series={[
-              { name: "CPU", color: palette[0], points: metricPoints("cpu") },
-            ]}
+            series={resourceSeries.cpu}
             max={100}
             step={history.step}
           />
           <Chart
             title="内存与磁盘"
-            series={[
-              {
-                name: "内存",
-                color: palette[1],
-                points: metricPoints("mem_used", 1024 ** 3),
-              },
-              {
-                name: "磁盘",
-                color: palette[2],
-                points: metricPoints("disk_used", 1024 ** 3),
-              },
-            ]}
+            series={resourceSeries.memory}
             unit=" GB"
             step={history.step}
           />
           <Chart
             title="来来往往的流量"
-            series={[
-              {
-                name: "下载",
-                color: palette[0],
-                points: metricPoints("net_rx", 1024 ** 2),
-              },
-              {
-                name: "上传",
-                color: palette[1],
-                points: metricPoints("net_tx", 1024 ** 2),
-              },
-            ]}
+            series={resourceSeries.traffic}
             unit=" MB/s"
             step={history.step}
           />

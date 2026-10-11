@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import rough from "roughjs";
+import manifest from "../../theme.json";
 import "wired-elements/lib/wired-button.js";
 import "wired-elements/lib/wired-input.js";
 export const Stroke = memo(function Stroke({
@@ -191,7 +192,8 @@ export function Button({
     "wired-button",
     {
       ref,
-      class: `ink-button ${className} ${pressed ? "selected" : ""}`,
+      class: `ink-button ${className}`,
+      "data-selected": pressed ? "true" : "false",
       elevation: "2",
       onClick,
     },
@@ -320,7 +322,7 @@ export function Flag({ code }: { code: string }) {
     <span className="country-note" title={code || "地区未知"}>
       {valid && !missing ? (
         <img
-          src={`/flags/${flagCode}.svg`}
+          src={`/flags/${flagCode}.svg?v=${manifest.version}`}
           alt={`${code} 手绘国旗`}
           onError={() => setMissing(true)}
         />

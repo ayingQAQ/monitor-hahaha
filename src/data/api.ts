@@ -124,11 +124,11 @@ const TIMEOUT = 20_000;
  */
 const RETRIES = 6;
 
-export async function api<T>(path: string): Promise<T> {
+export async function api<T>(path: string, signal?: AbortSignal): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try {
       const res = await fetch(`/api${path}`, {
-        signal: AbortSignal.timeout(TIMEOUT),
+        signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT)]) : AbortSignal.timeout(TIMEOUT),
       });
       if (!res.ok) throw await failure(res);
       if (res.status === 204) return undefined as T;
@@ -139,11 +139,12 @@ export async function api<T>(path: string): Promise<T> {
           : e;
       })) as T;
     } catch (e) {
+      if (signal?.aborted) throw e;
       if (e instanceof ApiError) throw e;
       // Anything else failed on the network, the body's read included, where
       // the timeout also applies. Chrome names a timeout before the response
       // TimeoutError and one during the body's read AbortError; nothing else
-      // here aborts a request.
+      // here aborts a request unless the caller supplied a cancellation signal.
       const timedOut =
         e instanceof Error &&
         (e.name === "TimeoutError" || e.name === "AbortError");

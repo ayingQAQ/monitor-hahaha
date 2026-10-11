@@ -150,9 +150,9 @@ export function NodeCard({
                 ? "从未上报"
                 : `离线 ${uptime(node.last_seen_ago)}`}
         </span>
-        <span className="turn-page" aria-hidden="true">
+        <button type="button" className="turn-page" onClick={onOpen} aria-label={`翻页查看 ${node.name}`}>
           翻页 ↗
-        </span>
+        </button>
       </div>
     </Paper>
   );

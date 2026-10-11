@@ -18,8 +18,15 @@ export function Detail({
   days: number;
   onBack: () => void;
 }) {
-  const [hours, setHours] = useState(1),
+  const [requestedHours, setHours] = useState(1),
     [kind, setKind] = useState<"metrics" | "ping">(readView);
+  const windows = historyWindows(days);
+  const hours = windows.includes(requestedHours)
+    ? requestedHours
+    : windows.filter((h) => h <= requestedHours).at(-1) ?? windows[0];
+  useEffect(() => {
+    if (requestedHours !== hours) setHours(hours);
+  }, [requestedHours, hours]);
   const requestPath = `/nodes/${node.id}/metrics?hours=${hours}&points=${Math.max(60, Math.min(720, Math.round(innerWidth)))}&series=${kind}`;
   const [loaded, setLoaded] = useState<{key:string;data:History} | null>(() => {const cached=historyCache.get(requestPath);return cached?{key:requestPath,data:cached}:null;}),
     [error, setError] = useState(""),
@@ -120,7 +127,7 @@ export function Detail({
       </Paper>
       <div className="detail-controls">
         <div role="group" aria-label="历史时间范围">
-          {historyWindows(days).map((h) => (
+          {windows.map((h) => (
             <Button key={h} pressed={hours === h} onClick={() => setHours(h)}>
               {h < 24 ? `${h} 小时` : `${h / 24} 天`}
             </Button>

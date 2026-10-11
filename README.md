@@ -26,7 +26,7 @@
 
 1. 打开 Hub 后台的「主题」页。
 2. 将下面的仓库地址粘贴到安装地址栏，点击「从 GitHub 安装」。
-3. 安装完成后，选择并启用「手绘探针」。
+3. 安装完成后，选择并启用「hahaha」。
 
 ```text
 https://github.com/ayingQAQ/monitor-hahaha
@@ -36,7 +36,7 @@ https://github.com/ayingQAQ/monitor-hahaha
 
 1. 打开 [最新正式 Release](https://github.com/ayingQAQ/monitor-hahaha/releases/latest)。
 2. 下载附件 **theme.tar.gz**，在 Hub 的「主题」页上传安装。
-3. 选择并启用「手绘探针」。
+3. 选择并启用「hahaha」。
 
 附件 **theme.sha256** 可用于校验安装包。请下载 Release 附件中的 `theme.tar.gz`，GitHub 自动生成的源码 ZIP 和 TAR.GZ 不能作为主题安装包。
 
@@ -53,6 +53,7 @@ https://github.com/ayingQAQ/monitor-hahaha
 
 ## 使用说明
 
+- 前端路由为 `/`（首页）和 `/node/{id}`（节点详情）；延迟页面使用 `/node/{id}?view=ping`，资源页面使用 `/node/{id}`。反向代理或 WAF 应允许访问首页和 `/node/` 路由，详情页刷新需要由 Hub 返回主题的 `dist/index.html`。
 - 主题短名为 **monitor-hahaha**，用于 Hub 的安装目录和主题设置。
 - 节点名称、分组、备注、指标及历史记录由 Hub 提供；登录和节点管理使用 Hub 的内置后台。
 - 历史记录超出保留期或没有采样时，不显示为正常的零值。

@@ -1,5 +1,5 @@
 import type { Node } from "../data/api";
-import { bytes, rate, money, cycle, uptime } from "../domain/format";
+import { bytes, rate, money, cycle, uptime, daysUntil, sinceSeen } from "../domain/format";
 import { stateOf, usage } from "../domain/model";
 import { Paper, Icon, Flag, Meter, Scribble, Stroke } from "./Sketch";
 const stateLabels = {
@@ -52,7 +52,10 @@ export function NodeCard({
       "var(--ochre)",
     ],
   ];
-  const days = node.expires_in;
+  const days = node.expires_in !== undefined ? node.expires_in : daysUntil(node.expires_at);
+  const neverReported = node.last_seen_ago !== undefined
+    ? node.last_seen_ago === null
+    : !node.last_seen;
   return (
     <Paper
       className={`node-card card-${index % 4} ${state}`}
@@ -146,9 +149,9 @@ export function NodeCard({
             ? `连续运行 ${uptime(m.uptime)}`
             : node.online
               ? "等它写下第一笔…"
-              : node.last_seen_ago == null
+              : neverReported
                 ? "从未上报"
-                : `离线 ${uptime(node.last_seen_ago)}`}
+                : `离线 ${uptime(Math.max(0, sinceSeen(node)))}`}
         </span>
         <button type="button" className="turn-page" onClick={onOpen} aria-label={`翻页查看 ${node.name}`}>
           翻页 ↗

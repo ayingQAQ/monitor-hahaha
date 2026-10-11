@@ -89,6 +89,7 @@
 .brand-doodle {
   width: 48px;
   height: 54px;
+  object-fit: contain;
   transform: rotate(-6deg);
 }
 .site-brand > span {
@@ -493,7 +494,7 @@
   z-index: 5;
 }
 .node-card .paper-content {
-  padding: 31px 24px 28px;
+  padding: 26px 24px 23px;
 }
 .node-card.card-1::after {
   content: "";
@@ -515,7 +516,7 @@
   align-items: center;
   gap: 9px;
   justify-content: space-between;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 .folio {
   font-size: 15px;
@@ -608,11 +609,11 @@
   min-height: 29px;
 }
 .card-metrics {
-  margin: 21px 0 8px;
+  margin: 16px 0 6px;
 }
 .metric {
   display: block;
-  margin-bottom: 11px;
+  margin-bottom: 8px;
 }
 .metric > div {
   display: flex;
@@ -645,7 +646,7 @@
   justify-content: space-between;
   gap: 10px;
   font-size: 19px;
-  margin: 18px 0 15px;
+  margin: 12px 0 12px;
   color: var(--blue);
 }
 .speed-note > span {
@@ -661,7 +662,7 @@
   justify-content: space-between;
   gap: 8px;
   font-size: 18px;
-  margin-top: 12px;
+  margin-top: 9px;
 }
 .traffic-note > strong {
   font-size: 18px;
@@ -674,7 +675,7 @@
   flex-wrap: wrap;
   gap: 7px;
   font-size: 18px;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 .billing-note > span:first-child {
   color: var(--blue);
@@ -688,7 +689,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 9px;
-  margin-top: 15px;
+  margin-top: 12px;
   color: var(--muted);
 }
 .turn-page {
@@ -1157,7 +1158,7 @@ footer > span:last-child {
     margin-top: 0;
   }
   .node-card .paper-content {
-    padding: 34px 26px 29px;
+    padding: 28px 26px 23px;
   }
   .node-title {
     font-size: 35px;

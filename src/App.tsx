@@ -114,22 +114,11 @@ export default function App() {
               go(null);
             }}
           >
-            <svg
+            <img
               className="brand-doodle"
-              viewBox="0 0 58 64"
-              aria-hidden="true"
-            >
-              <Stroke
-                d="M8 6 L44 4 L49 56 L5 58 Z"
-                roughness={2}
-                fill="#eacb7290"
-              />
-              <Stroke
-                d="M13 15 L38 14 L39 27 L12 28 Z M13 34 L39 32 L40 47 L11 48 Z M16 20 L19 20 M28 20 L33 20 M16 40 L18 40 M27 40 L34 40"
-                color="var(--blue)"
-                roughness={0.8}
-              />
-            </svg>
+              src="/favicon.svg"
+              alt=""
+            />
             <span>
               {me?.site_name || "手绘探针"}
               <small>a little server scrapbook</small>

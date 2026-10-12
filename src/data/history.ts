@@ -35,6 +35,22 @@ export function normalizeHistory(
       latency: numeric(row.latency) && row.latency >= 0 ? row.latency : null,
     });
   }
+  const rawLoss = object(input.loss) ? input.loss : null;
+  const loss: History["loss"] = Object.fromEntries(
+    Object.entries(rawLoss ?? {}).filter(
+      (pair): pair is [string, number] =>
+        numeric(pair[1]) && pair[1] >= 0 && pair[1] <= 100,
+    ),
+  );
+  // Hub only includes positive loss. A valid answered sample with an omitted
+  // entry is zero loss; an absent map or an invalid explicit value is unknown.
+  if (rawLoss) {
+    for (const row of ping) {
+      if (row.latency !== null && !Object.hasOwn(rawLoss, row.task_id)) {
+        loss[row.task_id] = 0;
+      }
+    }
+  }
   return {
     metrics: metrics.sort((a, b) => a.ts - b.ts),
     ping,
@@ -43,12 +59,7 @@ export function normalizeHistory(
         (pair): pair is [string, string] => typeof pair[1] === "string",
       ),
     ),
-    loss: Object.fromEntries(
-      Object.entries(object(input.loss) ? input.loss : {}).filter(
-        (pair): pair is [string, number] =>
-          numeric(pair[1]) && pair[1] >= 0 && pair[1] <= 100,
-      ),
-    ),
+    loss,
     step: numeric(input.step) && input.step > 0 ? input.step : undefined,
   };
 }

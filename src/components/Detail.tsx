@@ -181,7 +181,9 @@ export function Detail({
                     {history.probes[id] || `探测 ${id}`}：
                     {history.loss[id] == null
                       ? "暂无统计"
-                      : `${history.loss[id]}%`}
+                      : history.loss[id] === 0
+                        ? "0%"
+                        : `${history.loss[id].toFixed(3)}%`}
                   </span>
                 ))
               : "暂无探测记录"}

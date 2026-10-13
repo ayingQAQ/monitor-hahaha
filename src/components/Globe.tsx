@@ -6,7 +6,7 @@ export function Globe({nodes,onOpen,focus,onFocus}:{nodes:Node[];onOpen:(id:numb
  const [view,setView]=useState({lon:100,lat:25});
  const surface=useRef<HTMLDivElement>(null),pauseUntil=useRef(0);
 
- useEffect(()=>{const ll=coordinates(focus);if(ll){pauseUntil.current=performance.now()+6000;setView({lon:ll[0],lat:ll[1]});}},[focus]);
+ useEffect(()=>{const ll=coordinates(focus);if(ll){pauseUntil.current=performance.now()+2000;setView({lon:ll[0],lat:ll[1]});}},[focus]);
  const drag=useRef<{x:number;y:number;lon:number;lat:number}|null>(null);
  useEffect(()=>{
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -18,7 +18,7 @@ export function Globe({nodes,onOpen,focus,onFocus}:{nodes:Node[];onOpen:(id:numb
    if(now-previous<50)return;
    const elapsed=Math.min(now-previous,100);previous=now;
    if(drag.current||now<pauseUntil.current)return;
-   setView(v=>({...v,lon:((v.lon+elapsed*.003+180)%360)-180}));
+   setView(v=>({...v,lon:((v.lon+elapsed*.006+180)%360)-180}));
   };
   const sync=()=>{
    cancelAnimationFrame(frame);frame=0;previous=0;
@@ -30,18 +30,21 @@ export function Globe({nodes,onOpen,focus,onFocus}:{nodes:Node[];onOpen:(id:numb
   return ()=>{cancelAnimationFrame(frame);observer.disconnect();document.removeEventListener('visibilitychange',sync);reduced.removeEventListener('change',sync);};
  },[]);
  const land=useMemo(()=>coastlines(view),[view]),grid=useMemo(()=>gridlines(view),[view]);
- const points=nodes.flatMap(n=>{
-  const ll=coordinates(n.country);if(!ll)return [];
+ const grouped=useMemo(()=>{
+  const groups=new Map<string,Node[]>();
+  for(const node of nodes){const code=countryCode(node.country);const group=groups.get(code)||[];group.push(node);groups.set(code,group);}
+  return [...groups].flatMap(([code,siblings])=>siblings.map((node,i)=>({node,ll:coordinates(code),angle:i*2.399,r:siblings.length>1?Math.min(16,5*Math.sqrt(i+1)):0})));
+ },[nodes]);
+ const points=grouped.flatMap(({node:n,ll,angle,r})=>{
+  if(!ll)return [];
   const p=project(ll[0],ll[1],view);if(!p.visible)return [];
-  const siblings=nodes.filter(s=>countryCode(s.country)===countryCode(n.country)),i=siblings.findIndex(s=>s.id===n.id);
-  const angle=i*2.399,r=siblings.length>1?Math.min(16,5*Math.sqrt(i+1)):0;
   return [{node:n,x:p.x+Math.cos(angle)*r,y:p.y+Math.sin(angle)*r}];
  });
- return <div className="node-globe" ref={surface} onFocusCapture={()=>{pauseUntil.current=performance.now()+6000;}}>
+ return <div className="node-globe" ref={surface} onFocusCapture={()=>{pauseUntil.current=performance.now()+2000;}}>
   <svg className="globe-map" viewBox="80 10 280 250" aria-label="节点地区分布，可拖动地球或点击节点" role="group"
-   onPointerDown={e=>{if((e.target as Element).closest('.globe-pin'))return;pauseUntil.current=performance.now()+6000;drag.current={x:e.clientX,y:e.clientY,...view};e.currentTarget.setPointerCapture(e.pointerId);}}
+   onPointerDown={e=>{if((e.target as Element).closest('.globe-pin'))return;pauseUntil.current=performance.now()+2000;drag.current={x:e.clientX,y:e.clientY,...view};e.currentTarget.setPointerCapture(e.pointerId);}}
    onPointerMove={e=>{const d=drag.current;if(!d)return;const scale=280/e.currentTarget.getBoundingClientRect().width;onFocus('');setView({lon:(((d.lon-(e.clientX-d.x)*scale*.48+180)%360+360)%360)-180,lat:Math.max(-65,Math.min(65,d.lat+(e.clientY-d.y)*scale*.36))});}}
-   onPointerUp={e=>{pauseUntil.current=performance.now()+6000;drag.current=null;if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);}}
+   onPointerUp={e=>{pauseUntil.current=performance.now()+2000;drag.current=null;if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);}}
    onPointerCancel={()=>{drag.current=null;}}>
    <Stroke d="M220 26 A104 104 0 1 1 220 234 A104 104 0 1 1 220 26" fill="#bed5d222" color="var(--blue)" roughness={.9} weight={1.2}/>
    {grid.map((d,i)=><Stroke key={`grid-${i}`} d={d} color="#7b9fa155" roughness={.25} weight={.55}/>)}

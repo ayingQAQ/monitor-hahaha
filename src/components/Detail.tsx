@@ -67,8 +67,9 @@ export function Detail({
     setKind(next);
   };
   const resourceSeries = useMemo(() => {
+    const rows = withGaps(history?.metrics || [], history?.step);
     const metricPoints = (key: string, scale = 1): ChartPoint[] =>
-    withGaps(history?.metrics || [], history?.step).map((row) => {
+    rows.map((row) => {
       const value = (row as Record<string, number | null>)[key];
       return {
         ts: row.ts,

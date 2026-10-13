@@ -11,9 +11,12 @@ export function globeLine(points:[number,number][],view:{lon:number;lat:number})
  return drawing.trim();
 }
 export function coastlines(view:{lon:number;lat:number}){return WORLD_OUTLINES.map(ring=>globeLine([...ring,ring[0]],view)).filter(Boolean);}
-export function gridlines(view:{lon:number;lat:number}){
+const GRID_RINGS = (()=>{
  const rings:[number,number][][]=[];
  for(let lon=-180;lon<180;lon+=30)rings.push(Array.from({length:61},(_,i)=>[lon,-90+i*3]));
  for(let lat=-60;lat<=60;lat+=30)rings.push(Array.from({length:121},(_,i)=>[-180+i*3,lat]));
- return rings.map(r=>globeLine(r,view)).filter(Boolean);
+ return rings;
+})();
+export function gridlines(view:{lon:number;lat:number}){
+ return GRID_RINGS.map(r=>globeLine(r,view)).filter(Boolean);
 }

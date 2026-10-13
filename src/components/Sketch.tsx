@@ -12,6 +12,7 @@ import rough from "roughjs";
 import manifest from "../../theme.json";
 import "wired-elements/lib/wired-button.js";
 import "wired-elements/lib/wired-input.js";
+const generator = rough.generator();
 export const Stroke = memo(function Stroke({
   d,
   color = "currentColor",
@@ -28,9 +29,8 @@ export const Stroke = memo(function Stroke({
   roughness?: number;
 }) {
   const drawing = useMemo(() => {
-    const gen = rough.generator();
-    return gen.toPaths(
-      gen.path(d, {
+    const gen = generator;
+    const drawable = gen.path(d, {
         seed,
         roughness,
         bowing: 1,
@@ -40,8 +40,11 @@ export const Stroke = memo(function Stroke({
         fillStyle: "hachure",
         hachureGap: 3.8,
         fillWeight: 1.3,
-      }),
-    );
+      });
+    for (const set of drawable.sets) for (const op of set.ops) {
+      for (let i=0;i<op.data.length;i++) op.data[i]=Math.round(op.data[i]*100)/100;
+    }
+    return gen.toPaths(drawable);
   }, [d, color, fill, seed, roughness, weight]);
   return (
     <>

@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Paper, Stroke } from "./Sketch";
 import { recordedAt, segments, type ChartPoint } from "../domain/model";
 export type Series = { name: string; color: string; points: ChartPoint[] };
@@ -27,17 +27,25 @@ export const Chart = memo(function Chart({
     ro.observe(el);
     return () => ro.disconnect();
   }, [series.length, series.some((s) => s.points.length > 0)]);
-  const all = series.flatMap((s) => s.points),
-    values = all.filter((p) => p.value != null).map((p) => p.value as number);
-  const start = Math.min(...all.map((p) => p.ts)),
-    end = Math.max(...all.map((p) => p.ts));
-  const max = fixedMax || Math.max(1, ...values) * 1.12;
+  const {count, start, end, max} = useMemo(() => {
+    let count=0, start=Infinity, end=-Infinity, peak=1;
+    for (const line of series) for (const point of line.points) {
+      count++;start=Math.min(start,point.ts);end=Math.max(end,point.ts);
+      if(point.value!==null)peak=Math.max(peak,point.value);
+    }
+    return {count,start,end,max:fixedMax || peak*1.12};
+  },[series,fixedMax]);
   const left = 62,
     right = width - 17,
     span = right - left;
   const x = (ts: number) =>
       left + ((ts - start) / Math.max(1, end - start)) * span,
     y = (v: number) => 185 - Math.min(1, v / max) * 154;
+  const curves = useMemo(() => series.map(s => segments(s.points).map(chunk =>
+    chunk.length === 1
+      ? `M${(x(chunk[0].ts)-1).toFixed(2)} ${y(chunk[0].value).toFixed(2)} h2`
+      : chunk.map((p,j) => `${j?'L':'M'}${x(p.ts).toFixed(2)} ${y(p.value).toFixed(2)}`).join(' ')
+  )),[series,width,start,end,max]);
   const format = (v: number) =>
     `${v >= 1000 ? (v / 1000).toFixed(1) + "k" : v.toFixed(v < 10 ? 1 : 0)}${unit}`;
   const clock = (ts: number) =>
@@ -53,7 +61,7 @@ export const Chart = memo(function Chart({
         <h3>{title}</h3>
         <span>手写记录 / HISTORY</span>
       </div>
-      {!all.length ? (
+      {!count ? (
         <div className="empty-history">这段时间，没有留下记录。</div>
       ) : (
         <>
@@ -98,19 +106,10 @@ export const Chart = memo(function Chart({
             />
             {series.map((s, i) => (
               <g key={s.name}>
-                {segments(s.points).map((chunk, k) => (
+                {curves[i].map((d, k) => (
                   <Stroke
                     key={k}
-                    d={
-                      chunk.length === 1
-                        ? `M${x(chunk[0].ts) - 1} ${y(chunk[0].value)} h2`
-                        : chunk
-                            .map(
-                              (p, j) =>
-                                `${j ? "L" : "M"}${x(p.ts)} ${y(p.value)}`,
-                            )
-                            .join(" ")
-                    }
+                    d={d}
                     color={s.color}
                     seed={42 + i}
                     roughness={0.8}

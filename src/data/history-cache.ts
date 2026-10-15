@@ -15,7 +15,7 @@ export class HistoryCache {
     this.entries.delete(key); this.entries.set(key, entry);
     return entry.data;
   }
-  set(key: string, data: History, now = Date.now()) {
+  set(key: string, data: History, now = Date.now(), ttl = this.ttl) {
     this.entries.delete(key);
     // Conservative object estimate without allocating a serialized copy.
     const bytes = data.metrics.reduce((sum,row) => sum + 64 + Object.keys(row).length * 24, 0)
@@ -23,7 +23,7 @@ export class HistoryCache {
       + Object.entries(data.probes).reduce((sum,[id,name]) => sum + 64 + (id.length + name.length) * 2, 0)
       + Object.keys(data.loss).length * 48 + 128;
     if (bytes > this.budget || data.metrics.length + data.ping.length > 6000) return;
-    this.entries.set(key, {data, expires: now + this.ttl, bytes});
+    this.entries.set(key, {data, expires: now + ttl, bytes});
     let total = [...this.entries.values()].reduce((sum,e) => sum + e.bytes, 0);
     while (this.entries.size > this.limit || total > this.budget) {
       const oldest = this.entries.keys().next().value!;

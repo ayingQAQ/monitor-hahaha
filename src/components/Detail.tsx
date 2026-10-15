@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, type Node } from "../data/api";
+import { type Node } from "../data/api";
 import { historyCache } from "../data/history-cache";
-import { normalizeHistory, type History } from "../data/history";
+import { type History } from "../data/history";
+import { acquireHistory, historyPath, warmHistory } from "../data/history-loader";
 import { historyWindows, type ChartPoint } from "../domain/model";
 import { bytes, withGaps } from "../domain/format";
 import { Paper, Icon, Flag, Button, Scribble } from "./Sketch";
@@ -27,30 +28,28 @@ export function Detail({
   useEffect(() => {
     if (requestedHours !== hours) setHours(hours);
   }, [requestedHours, hours]);
-  const requestPath = `/nodes/${node.id}/metrics?hours=${hours}&points=${Math.max(60, Math.min(720, Math.round(innerWidth)))}&series=${kind}`;
+  const requestPath = historyPath(node.id, hours, kind);
   const [loaded, setLoaded] = useState<{key:string;data:History} | null>(() => {const cached=historyCache.get(requestPath);return cached?{key:requestPath,data:cached}:null;}),
     [error, setError] = useState(""),
     [revision, setRevision] = useState(0);
-  const history = loaded?.key === requestPath ? loaded.data : null;
+  const cachedHistory = loaded?.key === requestPath ? null : historyCache.get(requestPath);
+  const history = cachedHistory ?? (loaded && loaded.key.endsWith(`&series=${kind}`) ? loaded.data : null);
+  const updating = !!history && !cachedHistory && loaded?.key !== requestPath;
   useEffect(() => {
     let active = true;
-    const controller = new AbortController();
     const cached = historyCache.get(requestPath);
     if (cached) {setLoaded({key:requestPath,data:cached});setError("");return;}
-    setLoaded(null);
     setError("");
-    api<unknown>(
-      requestPath, controller.signal,
-    )
-      .then((d) => {
-        const safe = normalizeHistory(d, kind);
-        if (active) {historyCache.set(requestPath,safe);setLoaded({key:requestPath,data:safe});}
+    const lease = acquireHistory(requestPath, kind);
+    lease.promise
+      .then((safe) => {
+        if (active) setLoaded({key:requestPath,data:safe});
       })
       .catch((e: Error) => {
         if (active) setError(e.message);
       });
     return () => {
-      active = false;controller.abort();
+      active = false;lease.release();
     };
   }, [requestPath, kind, revision]);
   useEffect(() => {
@@ -102,7 +101,7 @@ export function Detail({
         </Button>
         <nav className="detail-tabs" aria-label="节点页面">
           {(["metrics", "ping"] as const).map((k) => (
-            <Button key={k} pressed={kind === k} onClick={() => selectView(k)}>
+            <Button key={k} pressed={kind === k} onIntent={() => warmHistory(node.id,k,hours)} onClick={() => selectView(k)}>
               {k === "metrics" ? "资源手记" : "延迟探测"}
             </Button>
           ))}
@@ -129,12 +128,13 @@ export function Detail({
       <div className="detail-controls">
         <div role="group" aria-label="历史时间范围">
           {windows.map((h) => (
-            <Button key={h} pressed={hours === h} onClick={() => setHours(h)}>
+            <Button key={h} pressed={hours === h} onIntent={() => warmHistory(node.id,kind,h)} onClick={() => setHours(h)}>
               {h < 24 ? `${h} 小时` : `${h / 24} 天`}
             </Button>
           ))}
         </div>
       </div>
+      {updating && !error && <p className="history-loading" role="status">正在加载 {hours < 24 ? `${hours} 小时` : `${hours / 24} 天`}记录，暂时显示上次记录…</p>}
       {error ? (
         <Paper className="message" color="pink" tape>
           <h3>这页没能读出来</h3>

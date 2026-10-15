@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, groupsOf, useNodes } from "./data/api";
 import { loadConfig } from "./data/config";
+import { warmHistory } from "./data/history-loader";
 import { bytes, rate } from "./domain/format";
 import { countryCode } from "./domain/globe";
 import { usage, stateOf } from "./domain/model";
@@ -38,6 +39,9 @@ export default function App() {
   const [globeCountry, setGlobeCountry] = useState("");
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<string | null>(null);
+  useEffect(() => {
+    if (id !== null) warmHistory(id, new URLSearchParams(location.search).get("view") === "ping" ? "ping" : "metrics");
+  }, [id]);
   const loadMe = () =>
     api<Me>("/me")
       .then((d) => {

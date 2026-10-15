@@ -1,4 +1,6 @@
 import type { Node } from "../data/api";
+import { useEffect, useRef } from "react";
+import { warmHistory } from "../data/history-loader";
 import { bytes, rate, money, cycle, uptime, daysUntil, sinceSeen } from "../domain/format";
 import { stateOf, usage } from "../domain/model";
 import { Paper, Icon, Flag, Meter, Scribble, Stroke } from "./Sketch";
@@ -33,6 +35,11 @@ export function NodeCard({
   index: number;
   onOpen: () => void;
 }) {
+  const intentTimer = useRef<ReturnType<typeof setTimeout>>();
+  const cancelIntent = () => clearTimeout(intentTimer.current);
+  const warm = () => { cancelIntent(); warmHistory(node.id); };
+  const intent = { onPointerEnter: () => {cancelIntent();intentTimer.current=setTimeout(warm,100);}, onPointerLeave: cancelIntent, onFocus: warm, onBlur: cancelIntent, onPointerDown: warm };
+  useEffect(() => cancelIntent, []);
   const state = stateOf(node),
     m = state === "online" ? node.metrics : null;
   const percent = (used: number, total: number) =>
@@ -72,7 +79,7 @@ export function NodeCard({
         <Flag code={node.country} />
         <Status node={node} />
       </div>
-      <button id={`node-card-${node.id}`} className="node-title" onClick={onOpen}>
+      <button id={`node-card-${node.id}`} className="node-title" {...intent} onClick={() => {warm();onOpen();}}>
         {node.name}
         <Icon name="arrow" size={23} />
       </button>
@@ -153,7 +160,7 @@ export function NodeCard({
                 ? "从未上报"
                 : `离线 ${uptime(Math.max(0, sinceSeen(node)))}`}
         </span>
-        <button type="button" className="turn-page" onClick={onOpen} aria-label={`翻页查看 ${node.name}`}>
+        <button type="button" className="turn-page" {...intent} onClick={() => {warm();onOpen();}} aria-label={`翻页查看 ${node.name}`}>
           翻页 ↗
         </button>
       </div>

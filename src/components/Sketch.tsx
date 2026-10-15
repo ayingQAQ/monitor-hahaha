@@ -165,14 +165,20 @@ export function Button({
   className = "",
   label,
   pressed,
+  onIntent,
 }: {
   children: ReactNode;
   onClick?: () => void;
   className?: string;
   label?: string;
   pressed?: boolean;
+  onIntent?: () => void;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const intentTimer = useRef<ReturnType<typeof setTimeout>>();
+  const cancelIntent = () => clearTimeout(intentTimer.current);
+  const warm = () => {cancelIntent();onIntent?.();};
+  useEffect(() => cancelIntent, []);
   useEffect(() => {
     const el = ref.current as HTMLElement & {
       updateComplete?: Promise<unknown>;
@@ -192,6 +198,11 @@ export function Button({
       "data-selected": pressed ? "true" : "false",
       elevation: "2",
       onClick,
+      onPointerEnter: () => {if(onIntent){cancelIntent();intentTimer.current=setTimeout(warm,100);}},
+      onPointerLeave: cancelIntent,
+      onFocus: onIntent ? warm : undefined,
+      onBlur: cancelIntent,
+      onPointerDown: onIntent ? warm : undefined,
     },
     children,
   );

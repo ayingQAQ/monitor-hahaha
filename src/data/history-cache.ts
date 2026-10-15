@@ -33,7 +33,9 @@ export class HistoryCache {
 }
 export const historyCache = new HistoryCache();
 if (typeof document !== 'undefined') {
+  let releaseTimer: ReturnType<typeof setTimeout> | undefined;
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) historyCache.clear();
+    clearTimeout(releaseTimer);
+    if (document.hidden) releaseTimer = setTimeout(() => historyCache.clear(), 30_000);
   });
 }

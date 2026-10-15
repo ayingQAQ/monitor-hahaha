@@ -1,12 +1,8 @@
 @import "./paper-base.css" layer(paperbase);
+@import "./font-chinese.css";
 @font-face {
   font-family: SketchLatin;
   src: url("/fonts/PatrickHand.woff2") format("woff2");
-  font-display: swap;
-}
-@font-face {
-  font-family: SketchChinese;
-  src: url("/fonts/LongCang.woff2") format("woff2");
   font-display: swap;
 }
 :root {

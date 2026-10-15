@@ -101,7 +101,10 @@ export function Paper({
   const id = useId().replace(/:/g, "");
   useEffect(() => {
     const el = ref.current!;
-    const measure = () => setSize([el.clientWidth, el.clientHeight]);
+    const measure = () => {
+      const width=el.clientWidth, height=el.clientHeight;
+      setSize(previous => previous[0]===width && previous[1]===height ? previous : [width,height]);
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -119,19 +122,9 @@ export function Paper({
         aria-hidden="true"
       >
         <defs>
-          <filter id={`grain-${id}`}>
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency=".73"
-              numOctaves="3"
-              seed={seed}
-            />
-            <feColorMatrix type="saturate" values="0" />
-            <feComponentTransfer>
-              <feFuncA type="linear" slope=".09" />
-            </feComponentTransfer>
-            <feBlend in="SourceGraphic" mode="multiply" />
-          </filter>
+          <pattern id={`grain-${id}`} width="128" height="128" patternUnits="userSpaceOnUse">
+            <image href="/paper-grain.svg" width="128" height="128" />
+          </pattern>
           <clipPath id={`cut-${id}`}>
             <path d={d} />
           </clipPath>
@@ -144,8 +137,8 @@ export function Paper({
               fill="var(--sheet)"
               stroke="#9b8e7238"
               strokeWidth=".7"
-              filter={`url(#grain-${id})`}
             />
+            <path d={d} fill={`url(#grain-${id})`} style={{mixBlendMode:"multiply"}} />
             <g clipPath={`url(#cut-${id})`} opacity=".32">
               <path
                 d={`M${size[0] - 24} 5 L${size[0] - 24} 24 L${size[0] - 5} 24 Z`}

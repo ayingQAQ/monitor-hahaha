@@ -9,6 +9,7 @@ const object = (v: unknown): v is Record<string, unknown> =>
   v !== null && typeof v === "object" && !Array.isArray(v);
 const numeric = (v: unknown): v is number =>
   typeof v === "number" && Number.isFinite(v);
+const metricFields = ["cpu", "mem_used", "disk_used", "net_rx", "net_tx"] as const;
 export function normalizeHistory(
   input: unknown,
   kind: "metrics" | "ping",
@@ -18,13 +19,11 @@ export function normalizeHistory(
   const metrics: History["metrics"] = [];
   for (const row of Array.isArray(input.metrics) ? input.metrics : []) {
     if (!object(row) || !numeric(row.ts)) continue;
-    const safe = Object.fromEntries(
-      Object.entries(row).map(([key, value]) => [
-        key,
-        numeric(value) ? value : null,
-      ]),
-    ) as Record<string, number | null>;
-    metrics.push({ ...safe, ts: row.ts });
+    const safe: History["metrics"][number] = { ts: row.ts };
+    for (const key of metricFields) {
+      if (Object.hasOwn(row,key)) safe[key] = numeric(row[key]) ? row[key] : null;
+    }
+    metrics.push(safe);
   }
   const ping: History["ping"] = [];
   for (const row of Array.isArray(input.ping) ? input.ping : []) {

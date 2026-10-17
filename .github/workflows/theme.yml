@@ -1,0 +1,96 @@
+name: Build and release theme
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: theme-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+jobs:
+  build:
+    name: Build and validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      artifact: ${{ steps.version.outputs.artifact }}
+      publish: ${{ steps.version.outputs.publish }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Check version and tag
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_type == 'tag' && github.ref_name || '' }}
+        run: node scripts/check-version.mjs
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build and validate theme archive
+        run: npm run package
+      - name: Prepare release files
+        run: |
+          gzip -t theme.tar.gz
+          mkdir -p release-assets
+          cp theme.tar.gz .cache/theme.sha256 release-assets/
+          cd release-assets
+          sha256sum --check theme.sha256
+      - name: Upload theme package
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.version.outputs.artifact }}
+          path: release-assets/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  release:
+    name: Publish release
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && needs.build.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download validated package
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.build.outputs.artifact }}
+          path: release-assets
+      - name: Verify downloaded files
+        working-directory: release-assets
+        run: |
+          gzip -t theme.tar.gz
+          sha256sum --check theme.sha256
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; leaving it unchanged."
+            exit 0
+          fi
+          gh release create "$RELEASE_TAG" \
+            release-assets/theme.tar.gz release-assets/theme.sha256 \
+            --verify-tag \
+            --title "hahaha ${RELEASE_TAG#v}" \
+            --generate-notes \
+            --notes '下载 theme.tar.gz 在 Monitor Hub 中安装；theme.sha256 用于校验安装包。'

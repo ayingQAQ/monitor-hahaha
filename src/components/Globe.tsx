@@ -53,7 +53,7 @@ export function Globe({nodes,onOpen,focus,onFocus}:{nodes:Node[];onOpen:(id:numb
    {points.map(({node,x,y})=><g key={node.id} className={`globe-pin ${node.online?'online':'offline'}`} role="button" tabIndex={0} aria-label={`定位 ${node.name} 卡片`} onClick={()=>onOpen(node.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onOpen(node.id);}}}>
     <title>{node.name} · {node.online?'在线':'离线'}</title>
     <circle cx={x} cy={y} r="12" fill="transparent"/>
-    <Stroke d={`M${x} ${y-4} A4 4 0 1 1 ${x} ${y+4} A4 4 0 1 1 ${x} ${y-4}`} color={node.online?'var(--blue)':'var(--red)'} fill={node.online?'var(--blue)':'var(--red)'} roughness={.7} weight={1}/>
+    <Stroke d={`M${x} ${y-2.5} A2.5 2.5 0 1 1 ${x} ${y+2.5} A2.5 2.5 0 1 1 ${x} ${y-2.5}`} color={node.online?'var(--blue)':'var(--red)'} fill={node.online?'var(--blue)':'var(--red)'} roughness={.35} weight={.8}/>
    </g>)}
   </svg>
 
